@@ -82,7 +82,7 @@ public class SpStorage {
                             if (creat(tempJsonObject, keyList, 1, data)) {
                                 if (finalJsonArray != null) {
                                     finalValue = finalJsonArray.toString();
-                                    editor.putString(keyList[0], finalValue);
+                                    editor.putString(isFirstKeyJsonArray ? getJsonArrayName(keyList[0]) : keyList[0], finalValue);
                                     editor.commit();
                                     return true;
                                 }
@@ -222,7 +222,7 @@ public class SpStorage {
             }
         }
 
-        editor.putString(keyList[0], finalValue);
+        editor.putString(isFirstKeyJsonArray ? getJsonArrayName(keyList[0]) : keyList[0], finalValue);
         editor.commit();
         return true;
     }
@@ -281,7 +281,7 @@ public class SpStorage {
                             if (creat(tempJsonObject, keyList, 1, data)) {
                                 if (finalJsonArray != null) {
                                     finalValue = finalJsonArray.toString();
-                                    editor.putString(keyList[0], finalValue);
+                                    editor.putString(isFirstKeyJsonArray ? getJsonArrayName(keyList[0]) : keyList[0], finalValue);
                                     editor.commit();
                                     return true;
                                 }
@@ -351,7 +351,7 @@ public class SpStorage {
             }
         }
 
-        editor.putString(keyList[0], finalValue);
+        editor.putString(isFirstKeyJsonArray ? getJsonArrayName(keyList[0]) : keyList[0], finalValue);
         editor.commit();
         return true;
     }
@@ -363,7 +363,7 @@ public class SpStorage {
 
         for (int i = index; i < keyList.length; i ++) {
             if ( i == keyList.length - 1) {
-                if (isValidJsonArray(keyList[i])) {
+                if (isJsonArray(keyList[i])) {
                     if (getJsonArrayIndex(keyList[i]) == 0) {
                         tempJsonArray = new JSONArray();
                         try {
@@ -396,7 +396,7 @@ public class SpStorage {
                     }
                 }
             } else {
-                if (isValidJsonArray(keyList[i])) {
+                if (isJsonArray(keyList[i])) {
                     if (getJsonArrayIndex(keyList[i]) == 0) {
                         tempJsonArray = new JSONArray();
                         try {
