@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:background="#EEEED1"
+    android:orientation="vertical">
+
+    <RelativeLayout
+        android:id="@+id/parent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="30dp"
+        android:layout_marginTop="50dp">
+
+        <EditText
+            android:id="@+id/edittext"
+            android:layout_width="200dp"
+            android:layout_height="40dp"
+            android:background="#e96113"
+            android:paddingLeft="3dp"
+            android:singleLine="true" />
+
+        <ImageView
+            android:id="@+id/btn_select"
+            android:layout_width="30dp"
+            android:layout_height="40dp"
+            android:layout_toRightOf="@id/edittext"
+            android:background="#e96113"
+            android:scaleType="fitXY"
+            android:src="@drawable/order_title_arrow_down" />
+
+        <EditText
+            android:id="@+id/edittext1"
+            android:layout_width="200dp"
+            android:layout_height="40dp"
+            android:layout_alignLeft="@id/edittext"
+            android:layout_below="@id/edittext"
+            android:layout_marginTop="30dp"
+            android:background="#e96113"
+            android:paddingLeft="3dp"
+            android:singleLine="true" />
+
+        <ImageView
+            android:id="@+id/btn_select1"
+            android:layout_width="30dp"
+            android:layout_height="40dp"
+            android:layout_below="@id/edittext"
+            android:layout_marginTop="30dp"
+            android:layout_toRightOf="@id/edittext1"
+            android:background="#e96113"
+            android:scaleType="fitXY"
+            android:src="@drawable/order_title_arrow_down" />
+    </RelativeLayout>
+</LinearLayout>
