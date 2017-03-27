@@ -51,6 +51,7 @@ public class SpStorage {
             JSONObject tempJsonObject = null;
             JSONObject cacheJsonObject = null;
             JSONArray tempJsonArray = null;
+            JSONArray cacheJsonArray = null;
             String value;
 
             //如果是jsonarray用array的name取值
@@ -71,23 +72,26 @@ public class SpStorage {
                     tempJsonArray = finalJsonArray = getJSONArrayFromString(value);
                     tempJsonObject = getJSONObjectFromJSONArray(tempJsonArray, getJsonArrayIndex(keyList[0]));
                     if (tempJsonObject == null) {
-                        if (getJsonArrayIndex(keyList[0]) == tempJsonArray.length()) {
-                            //在存储的jsonarray内取不到该index的jsonobject，如果该index刚好等于length，新建一个存储
-                            tempJsonObject = new JSONObject();
-                            try {
-                                tempJsonArray.put(getJsonArrayIndex(keyList[0]), tempJsonObject);
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            }
-                            if (creat(tempJsonObject, keyList, 1, data)) {
-                                if (finalJsonArray != null) {
-                                    finalValue = finalJsonArray.toString();
-                                    editor.putString(isFirstKeyJsonArray ? getJsonArrayName(keyList[0]) : keyList[0], finalValue);
-                                    editor.commit();
-                                    return true;
+                        cacheJsonArray = getJSONArrayFromJSONArray(tempJsonArray, getJsonArrayIndex(keyList[0]));
+                        if (cacheJsonArray == null) {
+                            if (getJsonArrayIndex(keyList[0]) == tempJsonArray.length()) {
+                                //在存储的jsonarray内取不到该index的jsonobject，如果该index刚好等于length，新建一个存储
+                                tempJsonObject = new JSONObject();
+                                try {
+                                    tempJsonArray.put(getJsonArrayIndex(keyList[0]), tempJsonObject);
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
                                 }
-                            } else {
-                                return false;
+                                if (creat(tempJsonObject, keyList, 1, data)) {
+                                    if (finalJsonArray != null) {
+                                        finalValue = finalJsonArray.toString();
+                                        editor.putString(isFirstKeyJsonArray ? getJsonArrayName(keyList[0]) : keyList[0], finalValue);
+                                        editor.commit();
+                                        return true;
+                                    }
+                                } else {
+                                    return false;
+                                }
                             }
                         }
                     }
@@ -96,7 +100,12 @@ public class SpStorage {
                 for (int i = 1; i < keyList.length; i++) {
                     if (i == keyList.length - 1) {
                         if (isJsonArray(keyList[i])) {
-                            tempJsonArray = getJSONArrayFromJSONObject(getJsonArrayName(keyList[i]), tempJsonObject);
+                            if (cacheJsonArray == null) {
+                                tempJsonArray = getJSONArrayFromJSONObject(getJsonArrayName(keyList[i]), tempJsonObject);
+                            } else {
+                                tempJsonArray = cacheJsonArray;
+                                cacheJsonArray = null;
+                            }
                             try {
                                 if (isValidJsonObject(data)) {
                                     tempJsonArray.put(getJsonArrayIndex(keyList[i]), getJSONObjectFromString(data));
@@ -123,7 +132,12 @@ public class SpStorage {
                         }
                     } else {
                         if (isJsonArray(keyList[i])) {
-                            tempJsonArray = getJSONArrayFromJSONObject(getJsonArrayName(keyList[i]), tempJsonObject);
+                            if (cacheJsonArray == null) {
+                                tempJsonArray = getJSONArrayFromJSONObject(getJsonArrayName(keyList[i]), tempJsonObject);
+                            } else {
+                                tempJsonArray = cacheJsonArray;
+                                cacheJsonArray = null;
+                            }
                             if (tempJsonArray == null) {
                                 tempJsonArray = new JSONArray();
                                 try {
@@ -143,18 +157,21 @@ public class SpStorage {
                             tempJsonObject = getJSONObjectFromJSONArray(tempJsonArray, getJsonArrayIndex(keyList[i]));
 
                             if (tempJsonObject == null) {
-                                if (getJsonArrayIndex(keyList[i]) == tempJsonArray.length()) {
-                                    //在存储的jsonarray内取不到该index的jsonobject，如果该index刚好等于length，新建一个存储
-                                    tempJsonObject = new JSONObject();
-                                    try {
-                                        tempJsonArray.put(getJsonArrayIndex(keyList[i]), tempJsonObject);
-                                    } catch (JSONException e) {
-                                        e.printStackTrace();
-                                    }
-                                    if (creat(tempJsonObject, keyList, i + 1, data)) {
-                                        break;
-                                    } else {
-                                        return false;
+                                cacheJsonArray = getJSONArrayFromJSONArray(tempJsonArray, getJsonArrayIndex(keyList[i]));
+                                if (cacheJsonArray == null) {
+                                    if (getJsonArrayIndex(keyList[i]) == tempJsonArray.length()) {
+                                        //在存储的jsonarray内取不到该index的jsonobject，如果该index刚好等于length，新建一个存储
+                                        tempJsonObject = new JSONObject();
+                                        try {
+                                            tempJsonArray.put(getJsonArrayIndex(keyList[i]), tempJsonObject);
+                                        } catch (JSONException e) {
+                                            e.printStackTrace();
+                                        }
+                                        if (creat(tempJsonObject, keyList, i + 1, data)) {
+                                            break;
+                                        } else {
+                                            return false;
+                                        }
                                     }
                                 }
                             }
@@ -209,135 +226,6 @@ public class SpStorage {
                 finalValue = finalJsonObject.toString();
             } else if (finalJsonArray != null) {
                 finalValue = finalJsonArray.toString();
-            }
-        } else {
-            //只有一段，且这一段不是jsonarray
-            if (isValidJsonObject(data)) {
-                //data是合法的jsonobject，转成jsonString存储
-                finalJsonObject = getJSONObjectFromString(data);
-                finalValue = finalJsonObject.toString();
-            } else {
-                //data是非法的jsonobject，直接存储
-                finalValue = data;
-            }
-        }
-
-        editor.putString(isFirstKeyJsonArray ? getJsonArrayName(keyList[0]) : keyList[0], finalValue);
-        editor.commit();
-        return true;
-    }
-
-    public boolean set(String key, String data, boolean nonono) {
-        Log.d(TAG, "存储 " + key + " = " + data);
-        SharedPreferences sharedPreferences = mContext.getSharedPreferences(storageName, 0);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        Log.d(TAG, "set value: " + key + " = " + data);
-
-        JSONObject finalJsonObject = null;
-        JSONArray finalJsonArray = null;
-        String finalValue = "";
-
-        //对入参进行分段
-        String[] keyList = key.split("\\.");
-        boolean isFirstKeyJsonArray = isJsonArray(keyList[0]);
-
-        //如果有多段，或者第一段为jsonarray
-        if (keyList.length > 1 || isFirstKeyJsonArray) {
-            JSONObject tempJsonObject = null;
-            JSONArray tempJsonArray = null;
-            JSONObject cacheJsonObject = null;
-            String value;
-
-            //如果是jsonarray用array的name取值
-            if (isFirstKeyJsonArray) {
-                value = sharedPreferences.getString(getJsonArrayName(keyList[0]), null);
-            } else {
-                value = sharedPreferences.getString(keyList[0], null);
-            }
-
-            //判断第一段key和以第一段key存储的旧数据格式是否一致
-            boolean isValidJsonObjectOK = !isFirstKeyJsonArray && isValidJsonObject(value);
-            boolean isValidJsonArrayOK = isFirstKeyJsonArray && isValidJsonArray(value);
-
-            //判断将要存储的数据的格式
-            boolean isDataValidJsonObject = isValidJsonObject(data);
-            boolean isDataValidJsonArray = isValidJsonArray(data);
-
-            if (isValidJsonObjectOK || isValidJsonArrayOK) {
-                if (isValidJsonObjectOK) {
-                    tempJsonObject = finalJsonObject = getJSONObjectFromString(value);
-                } else if (isValidJsonArrayOK) {
-                    tempJsonArray = finalJsonArray = getJSONArrayFromString(value);
-                    tempJsonObject = getJSONObjectFromJSONArray(tempJsonArray, getJsonArrayIndex(keyList[0]));
-                    if (tempJsonObject == null) {
-                        if (getJsonArrayIndex(keyList[0]) == tempJsonArray.length()) {
-                            //在存储的jsonarray内取不到该index的jsonobject，如果该index刚好等于length，新建一个存储
-                            tempJsonObject = new JSONObject();
-                            try {
-                                tempJsonArray.put(getJsonArrayIndex(keyList[0]), tempJsonObject);
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            }
-                            if (creat(tempJsonObject, keyList, 1, data)) {
-                                if (finalJsonArray != null) {
-                                    finalValue = finalJsonArray.toString();
-                                    editor.putString(isFirstKeyJsonArray ? getJsonArrayName(keyList[0]) : keyList[0], finalValue);
-                                    editor.commit();
-                                    return true;
-                                }
-                            } else {
-                                return false;
-                            }
-                        }
-                    }
-                }
-
-                for (int i = 1; i < keyList.length; i++) {
-                    if (i == keyList.length - 1) {
-                        if (isJsonArray(keyList[i])) {
-                            tempJsonArray = getJSONArrayFromJSONObject(getJsonArrayName(keyList[i]), tempJsonObject);
-                            try {
-                                if (isDataValidJsonObject) {
-                                    tempJsonArray.put(getJsonArrayIndex(keyList[i]), getJSONObjectFromString(data));
-                                } else if (isDataValidJsonArray) {
-                                    tempJsonArray.put(getJsonArrayIndex(keyList[i]), getJSONArrayFromString(data));
-                                } else {
-                                    tempJsonArray.put(getJsonArrayIndex(keyList[i]), data);
-                                }
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            }
-                        } else {
-                            try {
-                                if (isDataValidJsonObject) {
-                                    tempJsonObject.put(keyList[i], getJSONObjectFromString(data));
-                                } else if (isDataValidJsonArray) {
-                                    tempJsonObject.put(keyList[i], getJSONArrayFromString(data));
-                                } else {
-                                    tempJsonObject.put(keyList[i], data);
-                                }
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    } else {
-                        if (isJsonArray(keyList[i])) {
-                            tempJsonArray = getJSONArrayFromJSONObject(getJsonArrayName(keyList[i]), tempJsonObject);
-                            tempJsonObject = getJSONObjectFromJSONArray(tempJsonArray, getJsonArrayIndex(keyList[i]));
-                        } else {
-                            tempJsonObject = getJSONObjectFromJSONObject(keyList[i], tempJsonObject);
-                        }
-                    }
-                }
-                if (finalJsonObject != null) {
-                    finalValue = finalJsonObject.toString();
-                } else if (finalJsonArray != null) {
-                    finalValue = finalJsonArray.toString();
-                }
-            } else {
-                //1.key为jsonobject,旧数据为非法的jsonobject，不匹配，不能存储
-                //2.key为jsonarray,旧数据为非法的jsonarray，不匹配，不能存储
-                return false;
             }
         } else {
             //只有一段，且这一段不是jsonarray
@@ -428,6 +316,7 @@ public class SpStorage {
         String value;
         JSONObject tempJsonObject = null;
         JSONArray tempJsonArray = null;
+        JSONArray cacheJsonArray = null;
 
         //对入参进行分段
         String[] keyList = key.split("\\.");
@@ -456,6 +345,9 @@ public class SpStorage {
                 e.printStackTrace();
             }
             tempJsonObject = getJSONObjectFromJSONArray(tempJsonArray, getJsonArrayIndex(keyList[0]));
+            if (tempJsonObject == null) {
+                cacheJsonArray = getJSONArrayFromJSONArray(tempJsonArray, getJsonArrayIndex(keyList[0]));
+            }
         } else {
             //如果都解析失败，返回
             return value;
@@ -463,13 +355,21 @@ public class SpStorage {
 
         for (int i = 1; i < keyList.length; i++) {
             if (isJsonArray(keyList[i])) {
-                tempJsonArray = getJSONArrayFromJSONObject(getJsonArrayName(keyList[i]), tempJsonObject);
+                if (cacheJsonArray == null) {
+                    tempJsonArray = getJSONArrayFromJSONObject(getJsonArrayName(keyList[i]), tempJsonObject);
+                } else {
+                    tempJsonArray = cacheJsonArray;
+                    cacheJsonArray = null;
+                }
                 try {
                     value = tempJsonArray.getString(getJsonArrayIndex(keyList[i]));
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
                 tempJsonObject = getJSONObjectFromJSONArray(tempJsonArray, getJsonArrayIndex(keyList[i]));
+                if (tempJsonObject == null) {
+                    cacheJsonArray = getJSONArrayFromJSONArray(tempJsonArray, getJsonArrayIndex(keyList[i]));
+                }
             } else {
                 try {
                     value = tempJsonObject.getString(keyList[i]);
