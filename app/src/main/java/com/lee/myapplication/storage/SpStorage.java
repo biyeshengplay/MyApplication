@@ -34,10 +34,8 @@ public class SpStorage {
     }
 
     public boolean set(String key, String data) {
-        Log.d(TAG, "set key: " + key + "value: " + data);
+        Log.d(TAG, "【set      】 【key】 : " + key + " value: " + data);
 
-        SharedPreferences sharedPreferences = mContext.getSharedPreferences(storageName, 0);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
         JSONObject finalJsonObject = null;
         JSONArray finalJsonArray = null;
         String finalValue = "";
@@ -56,9 +54,9 @@ public class SpStorage {
 
             //如果是jsonarray用array的name取值
             if (isFirstKeyJsonArray) {
-                value = sharedPreferences.getString(getJsonArrayName(keyList[0]), null);
+                value = getFromDB(getJsonArrayName(keyList[0]));
             } else {
-                value = sharedPreferences.getString(keyList[0], null);
+                value = getFromDB(keyList[0]);
             }
 
             //判断第一段key和以第一段key存储的旧数据格式是否一致
@@ -85,11 +83,11 @@ public class SpStorage {
                                 if (creat(tempJsonObject, keyList, 1, data)) {
                                     if (finalJsonArray != null) {
                                         finalValue = finalJsonArray.toString();
-                                        editor.putString(isFirstKeyJsonArray ? getJsonArrayName(keyList[0]) : keyList[0], finalValue);
-                                        editor.commit();
+                                        saveToDB(isFirstKeyJsonArray ? getJsonArrayName(keyList[0]) : keyList[0], finalValue);
                                         return true;
                                     }
                                 } else {
+                                    Log.d(TAG, "【set      】 【key】 : " + key + " 失败");
                                     return false;
                                 }
                             }
@@ -105,6 +103,22 @@ public class SpStorage {
                             } else {
                                 tempJsonArray = cacheJsonArray;
                                 cacheJsonArray = null;
+                            }
+                            if (tempJsonArray == null) {
+//                                tempJsonArray = new JSONArray();
+//                                try {
+//                                    tempJsonObject.put(getJsonArrayName(keyList[i]), tempJsonArray);
+//                                    tempJsonObject = new JSONObject();
+//                                    tempJsonArray.put(0, tempJsonObject);
+//                                } catch (JSONException e) {
+//                                    e.printStackTrace();
+//                                }
+                                if (creat(tempJsonObject, keyList, i, data)) {
+                                    break;
+                                } else {
+                                    Log.d(TAG, "【set      】 【key】 : " + key + " 失败");
+                                    return false;
+                                }
                             }
                             try {
                                 if (isValidJsonObject(data)) {
@@ -139,17 +153,18 @@ public class SpStorage {
                                 cacheJsonArray = null;
                             }
                             if (tempJsonArray == null) {
-                                tempJsonArray = new JSONArray();
-                                try {
-                                    tempJsonObject.put(getJsonArrayName(keyList[i]), tempJsonArray);
-                                    tempJsonObject = new JSONObject();
-                                    tempJsonArray.put(0, tempJsonObject);
-                                } catch (JSONException e) {
-                                    e.printStackTrace();
-                                }
-                                if (creat(tempJsonObject, keyList, i + 1, data)) {
+//                                tempJsonArray = new JSONArray();
+//                                try {
+//                                    tempJsonObject.put(getJsonArrayName(keyList[i]), tempJsonArray);
+//                                    tempJsonObject = new JSONObject();
+//                                    tempJsonArray.put(0, tempJsonObject);
+//                                } catch (JSONException e) {
+//                                    e.printStackTrace();
+//                                }
+                                if (creat(tempJsonObject, keyList, i, data)) {
                                     break;
                                 } else {
+                                    Log.d(TAG, "【set      】 【key】 : " + key + " 失败");
                                     return false;
                                 }
                             }
@@ -170,6 +185,7 @@ public class SpStorage {
                                         if (creat(tempJsonObject, keyList, i + 1, data)) {
                                             break;
                                         } else {
+                                            Log.d(TAG, "【set      】 【key】 : " + key + " 失败");
                                             return false;
                                         }
                                     }
@@ -187,6 +203,7 @@ public class SpStorage {
                                 if (creat(tempJsonObject, keyList, i + 1, data)) {
                                     break;
                                 } else {
+                                    Log.d(TAG, "【set      】 【key】 : " + key + " 失败");
                                     return false;
                                 }
                             } else {
@@ -209,6 +226,7 @@ public class SpStorage {
                         }
                     } else {
                         //第一段key为jsonarray,且index大于0,而旧数据为非法的jsonarray，异常状态，不能存储
+                        Log.d(TAG, "【set      】 【key】 : " + key + " 失败");
                         return false;
                     }
                 } else {
@@ -219,6 +237,7 @@ public class SpStorage {
 
                 //新建不匹配的json层次
                 if (!creat(tempJsonObject, keyList, 1, data)) {
+                    Log.d(TAG, "【set      】 【key】 : " + key + " 失败");
                     return false;
                 }
             }
@@ -239,18 +258,17 @@ public class SpStorage {
             }
         }
 
-        editor.putString(isFirstKeyJsonArray ? getJsonArrayName(keyList[0]) : keyList[0], finalValue);
-        editor.commit();
+        saveToDB(isFirstKeyJsonArray ? getJsonArrayName(keyList[0]) : keyList[0], finalValue);
         return true;
     }
 
     //新建不匹配的json层次
-    private boolean creat (JSONObject tempJsonObject, String [] keyList, int index, String data) {
+    private boolean creat(JSONObject tempJsonObject, String[] keyList, int index, String data) {
 
         JSONArray tempJsonArray;
 
-        for (int i = index; i < keyList.length; i ++) {
-            if ( i == keyList.length - 1) {
+        for (int i = index; i < keyList.length; i++) {
+            if (i == keyList.length - 1) {
                 if (isJsonArray(keyList[i])) {
                     if (getJsonArrayIndex(keyList[i]) == 0) {
                         tempJsonArray = new JSONArray();
@@ -312,7 +330,6 @@ public class SpStorage {
     }
 
     public String get(String key) {
-        SharedPreferences sharedPreferences = mContext.getSharedPreferences(storageName, 0);
         String value;
         JSONObject tempJsonObject = null;
         JSONArray tempJsonArray = null;
@@ -324,11 +341,12 @@ public class SpStorage {
 
         //如果是jsonarray用array的name取值
         if (isJsonArray) {
-            value = sharedPreferences.getString(getJsonArrayName(keyList[0]), null);
+            value = getFromDB(getJsonArrayName(keyList[0]));
         } else {
-            value = sharedPreferences.getString(keyList[0], null);
+            value = getFromDB(keyList[0]);
             //如果只有一段，且这一段不是array，直接返回
             if (keyList.length <= 1) {
+                Log.d(TAG, "【get      】 【key】 : " + key + " 【data】 : " + value);
                 return value;
             }
         }
@@ -343,6 +361,8 @@ public class SpStorage {
                 value = tempJsonArray.getString(getJsonArrayIndex(keyList[0]));
             } catch (JSONException e) {
                 e.printStackTrace();
+                Log.d(TAG, "【get      】 【key】 : " + key + " 失败");
+                return "";
             }
             tempJsonObject = getJSONObjectFromJSONArray(tempJsonArray, getJsonArrayIndex(keyList[0]));
             if (tempJsonObject == null) {
@@ -350,7 +370,8 @@ public class SpStorage {
             }
         } else {
             //如果都解析失败，返回
-            return value;
+            Log.d(TAG, "【get      】 【key】 : " + key + " 失败");
+            return "";
         }
 
         for (int i = 1; i < keyList.length; i++) {
@@ -365,6 +386,8 @@ public class SpStorage {
                     value = tempJsonArray.getString(getJsonArrayIndex(keyList[i]));
                 } catch (JSONException e) {
                     e.printStackTrace();
+                    Log.d(TAG, "【get      】 【key】 : " + key + " 失败");
+                    return "";
                 }
                 tempJsonObject = getJSONObjectFromJSONArray(tempJsonArray, getJsonArrayIndex(keyList[i]));
                 if (tempJsonObject == null) {
@@ -375,12 +398,15 @@ public class SpStorage {
                     value = tempJsonObject.getString(keyList[i]);
                 } catch (JSONException e) {
                     e.printStackTrace();
+                    Log.d(TAG, "【get      】 【key】 : " + key + " 失败");
+                    return "";
                 }
                 tempJsonObject = getJSONObjectFromJSONObject(keyList[i], tempJsonObject);
             }
 
         }
 
+        Log.d(TAG, "【get      】 【key】 : " + key + " 【data】 : " + "value");
         return value;
     }
 
@@ -489,5 +515,21 @@ public class SpStorage {
             e.printStackTrace();
         }
         return target;
+    }
+
+    private boolean saveToDB(String key, String data) {
+        Log.d(TAG, "【saveToDB 】 【key】 : " + key + " 【data】 : " + data );
+        SharedPreferences sharedPreferences = mContext.getSharedPreferences(storageName, 0);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString(key, data);
+        editor.commit();
+        return true;
+    }
+
+    private String getFromDB(String key) {
+        SharedPreferences sharedPreferences = mContext.getSharedPreferences(storageName, 0);
+        String value = sharedPreferences.getString(key, null);
+        Log.d(TAG, "【getFromDB】 【key】 : " + key + " 【data】 : " + value );
+        return value;
     }
 }
