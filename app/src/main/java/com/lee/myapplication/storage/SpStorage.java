@@ -406,7 +406,7 @@ public class SpStorage {
 
         }
 
-        Log.d(TAG, "【get      】 【key】 : " + key + " 【data】 : " + "value");
+        Log.d(TAG, "【get      】 【key】 : " + key + " 【data】 : " + value);
         return value;
     }
 
