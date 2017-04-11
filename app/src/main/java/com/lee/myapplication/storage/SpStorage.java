@@ -72,8 +72,8 @@ public class SpStorage {
                     if (tempJsonObject == null) {
                         cacheJsonArray = getJSONArrayFromJSONArray(tempJsonArray, getJsonArrayIndex(keyList[0]));
                         if (cacheJsonArray == null) {
-                            if (getJsonArrayIndex(keyList[0]) == tempJsonArray.length()) {
-                                //在存储的jsonarray内取不到该index的jsonobject，如果该index刚好等于length，新建一个存储
+                            if (getJsonArrayIndex(keyList[0]) == tempJsonArray.length() - 1) {
+                                //在存储的jsonarray内取不到该index的jsonobject，如果该index刚好等于length - 1，新建一个存储
                                 tempJsonObject = new JSONObject();
                                 try {
                                     tempJsonArray.put(getJsonArrayIndex(keyList[0]), tempJsonObject);
@@ -91,6 +91,9 @@ public class SpStorage {
                                     return false;
                                 }
                             }
+                        } else {
+                            Log.d(TAG, "【set      】 【key】 : " + key + " 失败, 不支持多维数组");
+                            return false;
                         }
                     }
                 }
@@ -158,8 +161,8 @@ public class SpStorage {
                             if (tempJsonObject == null) {
                                 cacheJsonArray = getJSONArrayFromJSONArray(tempJsonArray, getJsonArrayIndex(keyList[i]));
                                 if (cacheJsonArray == null) {
-                                    if (getJsonArrayIndex(keyList[i]) == tempJsonArray.length()) {
-                                        //在存储的jsonarray内取不到该index的jsonobject，如果该index刚好等于length，新建一个存储
+                                    if (getJsonArrayIndex(keyList[i]) == tempJsonArray.length() - 1) {
+                                        //在存储的jsonarray内取不到该index的jsonobject，如果该index刚好等于length - 1，新建一个存储
                                         tempJsonObject = new JSONObject();
                                         try {
                                             tempJsonArray.put(getJsonArrayIndex(keyList[i]), tempJsonObject);
@@ -198,7 +201,12 @@ public class SpStorage {
                         finalJsonArray = new JSONArray();
                         if (keyList.length == 1) {
                             try {
-                                finalJsonArray.put(0, data);
+                                if (isValidJsonObject(data)) {
+                                    finalJsonArray.put(0, getJSONObjectFromString(data));
+                                } else {
+                                    //不支持二维json数组，直接当字符串处理
+                                    finalJsonArray.put(0, data);
+                                }
                             } catch (JSONException e) {
                                 e.printStackTrace();
                             }
