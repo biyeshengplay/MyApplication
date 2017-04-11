@@ -105,14 +105,6 @@ public class SpStorage {
                                 cacheJsonArray = null;
                             }
                             if (tempJsonArray == null) {
-//                                tempJsonArray = new JSONArray();
-//                                try {
-//                                    tempJsonObject.put(getJsonArrayName(keyList[i]), tempJsonArray);
-//                                    tempJsonObject = new JSONObject();
-//                                    tempJsonArray.put(0, tempJsonObject);
-//                                } catch (JSONException e) {
-//                                    e.printStackTrace();
-//                                }
                                 if (creat(tempJsonObject, keyList, i, data)) {
                                     break;
                                 } else {
@@ -153,14 +145,6 @@ public class SpStorage {
                                 cacheJsonArray = null;
                             }
                             if (tempJsonArray == null) {
-//                                tempJsonArray = new JSONArray();
-//                                try {
-//                                    tempJsonObject.put(getJsonArrayName(keyList[i]), tempJsonArray);
-//                                    tempJsonObject = new JSONObject();
-//                                    tempJsonArray.put(0, tempJsonObject);
-//                                } catch (JSONException e) {
-//                                    e.printStackTrace();
-//                                }
                                 if (creat(tempJsonObject, keyList, i, data)) {
                                     break;
                                 } else {
@@ -194,13 +178,7 @@ public class SpStorage {
                         } else {
                             cacheJsonObject = getJSONObjectFromJSONObject(keyList[i], tempJsonObject);
                             if (cacheJsonObject == null) {
-                                cacheJsonObject = new JSONObject();
-                                try {
-                                    tempJsonObject.put(keyList[i], cacheJsonObject);
-                                } catch (JSONException e) {
-                                    e.printStackTrace();
-                                }
-                                if (creat(tempJsonObject, keyList, i + 1, data)) {
+                                if (creat(tempJsonObject, keyList, i, data)) {
                                     break;
                                 } else {
                                     Log.d(TAG, "【set      】 【key】 : " + key + " 失败");
@@ -218,11 +196,24 @@ public class SpStorage {
                     //第一段key为jsonarray,旧数据为非法的jsonarray，不匹配，需要新建并覆盖存储
                     if (getJsonArrayIndex(keyList[0]) == 0) {
                         finalJsonArray = new JSONArray();
-                        tempJsonObject = new JSONObject();
-                        try {
-                            finalJsonArray.put(0, tempJsonObject);
-                        } catch (JSONException e) {
-                            e.printStackTrace();
+                        if (keyList.length == 1) {
+                            try {
+                                finalJsonArray.put(0, data);
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                        } else {
+                            tempJsonObject = new JSONObject();
+                            try {
+                                finalJsonArray.put(0, tempJsonObject);
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                            //新建不匹配的json层次
+                            if (!creat(tempJsonObject, keyList, 1, data)) {
+                                Log.d(TAG, "【set      】 【key】 : " + key + " 失败");
+                                return false;
+                            }
                         }
                     } else {
                         //第一段key为jsonarray,且index大于0,而旧数据为非法的jsonarray，异常状态，不能存储
@@ -233,12 +224,11 @@ public class SpStorage {
                     //第一段key为jsonobject,旧数据为非法的jsonobject，不匹配，需要新建并覆盖存储
                     finalJsonObject = new JSONObject();
                     tempJsonObject = finalJsonObject;
-                }
-
-                //新建不匹配的json层次
-                if (!creat(tempJsonObject, keyList, 1, data)) {
-                    Log.d(TAG, "【set      】 【key】 : " + key + " 失败");
-                    return false;
+                    //新建不匹配的json层次
+                    if (!creat(tempJsonObject, keyList, 1, data)) {
+                        Log.d(TAG, "【set      】 【key】 : " + key + " 失败");
+                        return false;
+                    }
                 }
             }
             if (finalJsonObject != null) {
